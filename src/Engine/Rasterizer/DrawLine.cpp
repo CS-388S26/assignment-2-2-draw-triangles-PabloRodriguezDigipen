@@ -294,8 +294,9 @@ namespace Rasterizer
 
 		//slope is < 1
 		if (abs(m) < 1) {
-			//-----------------------------------------------------------------fix this
 			Color colorStep = (c1 - c2) / (p1.x - p2.x);
+			if (p2.x < p1.x)
+				colorStep = (c1 - c2) / (p2.x - p1.x);
 			Color c;
 			//check the direction of the line
 			if ((p2.x - p1.x) < 0) {
@@ -314,8 +315,9 @@ namespace Rasterizer
 		}
 		//slope is > 1
 		else {
-			//-----------------------------------------------------------------fix this
 			Color colorStep = (c1 - c2) / (p1.y - p2.y);
+			if (p2.y < p1.y)
+				colorStep = (c1 - c2) / (p2.y - p1.y);
 			Color c;
 			//check the direction of the line
 			if ((p2.y - p1.y) < 0) {
