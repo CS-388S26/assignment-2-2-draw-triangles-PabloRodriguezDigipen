@@ -294,10 +294,12 @@ namespace Rasterizer
 
 		//slope is < 1
 		if (abs(m) < 1) {
+			//get the color's step depending on the position of p1 and p2 on the x axis
 			Color colorStep = (c1 - c2) / (p1.x - p2.x);
 			if (p2.x < p1.x)
 				colorStep = (c1 - c2) / (p2.x - p1.x);
-			Color c;
+			//c is the color that will be changed each iteration
+			Color c = c1;
 			//check the direction of the line
 			if ((p2.x - p1.x) < 0) {
 				step = -1.f;
@@ -307,18 +309,20 @@ namespace Rasterizer
 			int eX = Round(p2.x) + step;
 			//move from that point drawing each pixel
 			for (int x = sX; x != eX; x += step) {
-				c += colorStep;
 				//get the new y
 				float y = (m * x) + b;
 				FrameBuffer::SetPixel(x, Round(y), c);
+				//change the color
+				c += colorStep;
 			}
 		}
 		//slope is > 1
 		else {
+			//get the color's step depending on the position of p1 and p2 on the y axis
 			Color colorStep = (c1 - c2) / (p1.y - p2.y);
 			if (p2.y < p1.y)
 				colorStep = (c1 - c2) / (p2.y - p1.y);
-			Color c;
+			Color c = c1;
 			//check the direction of the line
 			if ((p2.y - p1.y) < 0) {
 				step = -1.f;
@@ -328,10 +332,11 @@ namespace Rasterizer
 			int eY = Round(p2.y) + step;
 			//move from that point drawing each pixel
 			for (int y = sY; y != eY; y += step) {
-				c += colorStep;
 				//get the new x
 				float x = (y - b) / m;
 				FrameBuffer::SetPixel(Round(x), y, c);
+				//change the color
+				c += colorStep;
 			}
 		}
 	}

@@ -186,6 +186,7 @@ namespace Rasterizer
 			;
 	}
 
+	//another version of the triangle cases adapted for vertex
 	void triangleCasesVertex(const Vertex& v0, const Vertex& v1, const Vertex& v2, Vertex& top, Vertex& mid, Vertex& bot) {
 		if (v0.mPosition.y < v1.mPosition.y) {
 			//case 1
@@ -249,6 +250,7 @@ namespace Rasterizer
 		float invSlopeTB = ((bot.mPosition.x - top.mPosition.x) / (bot.mPosition.y - top.mPosition.y));
 		float invSlopeMB = ((bot.mPosition.x - mid.mPosition.x) / (bot.mPosition.y - mid.mPosition.y));
 
+		//get the steps of the color
 		Color stepTM = Color();
 		if (mid.mPosition.y != top.mPosition.y)
 			stepTM = (mid.mColor - top.mColor) / (mid.mPosition.y - top.mPosition.y);
@@ -258,11 +260,13 @@ namespace Rasterizer
 		Color stepMB = (bot.mColor - mid.mColor) / (bot.mPosition.y - mid.mPosition.y);
 		stepMB.a = 0;
 
-		//set up the x to traverse each side of the triangle
+		//set up the x and color to traverse each side of the triangle
 		float xL = top.mPosition.x;
 		float xR = top.mPosition.x;
 		Color cL = top.mColor;
 		Color cR = top.mColor;
+
+		//if the top of the triangle is flat, change right or left to fix it
 		if (mid.mPosition.y == top.mPosition.y) {
 			if (mid.mPosition.x < top.mPosition.x)
 				cL = mid.mColor;
@@ -273,13 +277,16 @@ namespace Rasterizer
 		int y;
 		//go from the top to the middle
 		for (y = Round(top.mPosition.y); y > Round(mid.mPosition.y); --y) {
+			//initialize the color to be used
 			Color c = cL;
-			Color stepIn = (cL - cR) / (xL - xR);
+			//get the step of the color for the line currently being drawn
+			Color stepIn = (cL - cR) / (xL - xR); 
+			//draw a line using linear interpolation from left to right
 			for (int x = Round(xL); x < Round(xR); ++x) {
 				FrameBuffer::SetPixel(x, y, c);
 				c += stepIn;
 			}
-			//update left and right depending on which side the middle point is
+			//update left and right of x and color depending on which side the middle point is
 			if (midIsLeft) {
 				xL -= invSlopeTM;
 				xR -= invSlopeTB;
@@ -294,7 +301,7 @@ namespace Rasterizer
 			}
 		}
 
-		//adjust xL or xR for any floating point error.
+		//adjust xL or xR for any floating point error
 		if (midIsLeft)
 			xL = mid.mPosition.x;
 		else
@@ -302,13 +309,16 @@ namespace Rasterizer
 
 		//go from the middle to the bottom
 		for (; y >= Round(bot.mPosition.y); --y) {
+			//initialize the color to be used
 			Color c = cL;
+			//get the step of the color for the line currently being drawn
 			Color stepIn = (cL - cR) / (xL - xR);
+			//draw a line using linear interpolation from left to right
 			for (int x = Round(xL); x < Round(xR); ++x) {
 				FrameBuffer::SetPixel(x, y, c);
 				c += stepIn;
 			}
-			//update left and right depending on which side the middle point is
+			//update left and right of x and color depending on which side the middle point is
 			if (midIsLeft) {
 				xL -= invSlopeMB;
 				xR -= invSlopeTB;
