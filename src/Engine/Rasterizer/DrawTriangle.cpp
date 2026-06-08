@@ -280,7 +280,7 @@ namespace Rasterizer
 			//initialize the color to be used
 			Color c = cL;
 			//get the step of the color for the line currently being drawn
-			Color stepIn = (cL - cR) / (xL - xR); 
+			Color stepIn = (cL - cR) / (xL - xR);
 			//draw a line using linear interpolation from left to right
 			for (int x = Round(xL); x < Round(xR); ++x) {
 				FrameBuffer::SetPixel(x, y, c);
@@ -302,10 +302,14 @@ namespace Rasterizer
 		}
 
 		//adjust xL or xR for any floating point error
-		if (midIsLeft)
+		if (midIsLeft){
 			xL = mid.mPosition.x;
-		else
+			cL = mid.mColor;
+		}
+		else {
 			xR = mid.mPosition.x;
+			cR = mid.mColor;
+		}
 
 		//go from the middle to the bottom
 		for (; y >= Round(bot.mPosition.y); --y) {
