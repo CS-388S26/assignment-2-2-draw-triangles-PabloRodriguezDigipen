@@ -181,9 +181,9 @@ namespace Rasterizer
 		if (currentDrawTriangle == eDT_BILINEAR)
 			DrawTriangleBiLinear(v0, v1, v2);
 		if (currentDrawTriangle == eDT_PLANE_NORMAL)
-			;
+			DrawTrianglePlaneNormal(v0, v1, v2);
 		if (currentDrawTriangle == eDT_BARYCENTRIC)
-			;
+			DrawTriangleBarycentric(v0, v1, v2);
 	}
 
 	//another version of the triangle cases adapted for vertex
@@ -336,6 +336,99 @@ namespace Rasterizer
 				cR -= stepMB;
 			}
 		}
+	}
+
+	void DrawTrianglePlaneNormal(const Vertex& v0, const Vertex& v1, const Vertex& v2) {
+		//triangle case identification
+		Vertex top, mid, bot;
+		//reorder the points
+		triangleCasesVertex(v0, v1, v2, top, mid, bot);
+
+		//check if the middle point is on the left using the dot product of the vectors
+		float dotProd = (mid.mPosition.x - top.mPosition.x) * (bot.mPosition.y - top.mPosition.y) - (mid.mPosition.y - top.mPosition.y) * (bot.mPosition.x - top.mPosition.x);
+		bool midIsLeft = 0;
+		if (dotProd > 0)
+			midIsLeft = 1;
+
+		//get the inverted slopes
+		float invSlopeTM = 0;
+		if (mid.mPosition.y != top.mPosition.y)
+			invSlopeTM = ((mid.mPosition.x - top.mPosition.x) / (mid.mPosition.y - top.mPosition.y));
+		float invSlopeTB = ((bot.mPosition.x - top.mPosition.x) / (bot.mPosition.y - top.mPosition.y));
+		float invSlopeMB = ((bot.mPosition.x - mid.mPosition.x) / (bot.mPosition.y - mid.mPosition.y));
+
+		//set up the x and color to traverse each side of the triangle
+		float xL = top.mPosition.x;
+		float xR = top.mPosition.x;
+
+		AEVec3 R01 = AEVec3(mid.mPosition.x - top.mPosition.x, mid.mPosition.y - top.mPosition.y, mid.mColor.r - top.mColor.r);
+		AEVec3 R02 = AEVec3(bot.mPosition.x - top.mPosition.x, bot.mPosition.y - top.mPosition.y, bot.mColor.r - top.mColor.r);
+		AEVec3 normalR = (R01.Cross(R02)).Normalize();
+		float dR = ( - normalR.x * top.mPosition.x) + ( - normalR.y * top.mPosition.y) + ( - normalR.z * top.mColor.r);
+
+		AEVec3 G01 = AEVec3(mid.mPosition.x - top.mPosition.x, mid.mPosition.y - top.mPosition.y, mid.mColor.g - top.mColor.g);
+		AEVec3 G02 = AEVec3(bot.mPosition.x - top.mPosition.x, bot.mPosition.y - top.mPosition.y, bot.mColor.g - top.mColor.g);
+		AEVec3 normalG = (G01.Cross(G02)).Normalize();
+		float dG = (-normalR.x * top.mPosition.x) + (-normalR.y * top.mPosition.y) + (-normalR.z * top.mColor.g);
+
+		AEVec3 B01 = AEVec3(mid.mPosition.x - top.mPosition.x, mid.mPosition.y - top.mPosition.y, mid.mColor.b - top.mColor.b);
+		AEVec3 B02 = AEVec3(bot.mPosition.x - top.mPosition.x, bot.mPosition.y - top.mPosition.y, bot.mColor.b - top.mColor.b);
+		AEVec3 normalB = (B01.Cross(B02)).Normalize();
+		float dB = (-normalR.x * top.mPosition.x) + (-normalR.y * top.mPosition.y) + (-normalR.z * top.mColor.b);
+
+		AEVec3 A01 = AEVec3(mid.mPosition.x - top.mPosition.x, mid.mPosition.y - top.mPosition.y, mid.mColor.a - top.mColor.a);
+		AEVec3 A02 = AEVec3(bot.mPosition.x - top.mPosition.x, bot.mPosition.y - top.mPosition.y, bot.mColor.a - top.mColor.a);
+		AEVec3 normalB = (A01.Cross(A02)).Normalize();
+		float dA = (-normalR.x * top.mPosition.x) + (-normalR.y * top.mPosition.y) + (-normalR.z * top.mColor.a);
+
+		int y;
+		//go from the top to the middle
+		for (y = Round(top.mPosition.y); y > Round(mid.mPosition.y); --y) {
+			//draw a line using linear interpolation from left to right
+			for (int x = Round(xL); x < Round(xR); ++x) {
+				Color c;
+				FrameBuffer::SetPixel(x, y, c);
+			}
+			//update left and right of x depending on which side the middle point is
+			if (midIsLeft) {
+				xL -= invSlopeTM;
+				xR -= invSlopeTB;
+			}
+			else {
+				xL -= invSlopeTB;
+				xR -= invSlopeTM;
+			}
+		}
+
+		//adjust xL or xR for any floating point error
+		if (midIsLeft) {
+			xL = mid.mPosition.x;
+		}
+		else {
+			xR = mid.mPosition.x;
+		}
+
+		//go from the middle to the bottom
+		for (; y >= Round(bot.mPosition.y); --y) {
+			//draw a line using linear interpolation from left to right
+			for (int x = Round(xL); x < Round(xR); ++x) {
+				Color c;
+				FrameBuffer::SetPixel(x, y, c);
+			}
+			//update left and right of x depending on which side the middle point is
+			if (midIsLeft) {
+				xL -= invSlopeMB;
+				xR -= invSlopeTB;
+			}
+			else {
+				xL -= invSlopeTB;
+				xR -= invSlopeMB;
+			}
+		}
+	}
+
+	void DrawTriangleBarycentric(const Vertex& v0, const Vertex& v1, const Vertex& v2) {
+
 	}
 
 	EDrawTriangleMethod GetDrawTriangleMethod() {
