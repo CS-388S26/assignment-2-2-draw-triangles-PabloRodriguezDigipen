@@ -369,17 +369,17 @@ namespace Rasterizer
 		AEVec3 G01 = AEVec3(mid.mPosition.x - top.mPosition.x, mid.mPosition.y - top.mPosition.y, mid.mColor.g - top.mColor.g);
 		AEVec3 G02 = AEVec3(bot.mPosition.x - top.mPosition.x, bot.mPosition.y - top.mPosition.y, bot.mColor.g - top.mColor.g);
 		AEVec3 normalG = (G01.Cross(G02)).Normalize();
-		float dG = (-normalR.x * top.mPosition.x) + (-normalR.y * top.mPosition.y) + (-normalR.z * top.mColor.g);
+		float dG = (-normalG.x * top.mPosition.x) + (-normalG.y * top.mPosition.y) + (-normalG.z * top.mColor.g);
 
 		AEVec3 B01 = AEVec3(mid.mPosition.x - top.mPosition.x, mid.mPosition.y - top.mPosition.y, mid.mColor.b - top.mColor.b);
 		AEVec3 B02 = AEVec3(bot.mPosition.x - top.mPosition.x, bot.mPosition.y - top.mPosition.y, bot.mColor.b - top.mColor.b);
 		AEVec3 normalB = (B01.Cross(B02)).Normalize();
-		float dB = (-normalR.x * top.mPosition.x) + (-normalR.y * top.mPosition.y) + (-normalR.z * top.mColor.b);
+		float dB = (-normalB.x * top.mPosition.x) + (-normalB.y * top.mPosition.y) + (-normalB.z * top.mColor.b);
 
 		AEVec3 A01 = AEVec3(mid.mPosition.x - top.mPosition.x, mid.mPosition.y - top.mPosition.y, mid.mColor.a - top.mColor.a);
 		AEVec3 A02 = AEVec3(bot.mPosition.x - top.mPosition.x, bot.mPosition.y - top.mPosition.y, bot.mColor.a - top.mColor.a);
-		AEVec3 normalB = (A01.Cross(A02)).Normalize();
-		float dA = (-normalR.x * top.mPosition.x) + (-normalR.y * top.mPosition.y) + (-normalR.z * top.mColor.a);
+		AEVec3 normalA = (A01.Cross(A02)).Normalize();
+		float dA = (-normalA.x * top.mPosition.x) + (-normalA.y * top.mPosition.y) + (-normalA.z * top.mColor.a);
 
 		int y;
 		//go from the top to the middle
@@ -387,6 +387,10 @@ namespace Rasterizer
 			//draw a line using linear interpolation from left to right
 			for (int x = Round(xL); x < Round(xR); ++x) {
 				Color c;
+				c.r = -(normalR.x * x + normalR.y * y + dR) / normalR.z;
+				c.g = -(normalG.x * x + normalG.y * y + dG) / normalG.z;
+				c.b = -(normalB.x * x + normalB.y * y + dB) / normalB.z;
+				c.a = -(normalA.x * x + normalA.y * y + dA) / normalA.z;
 				FrameBuffer::SetPixel(x, y, c);
 			}
 			//update left and right of x depending on which side the middle point is
@@ -413,6 +417,10 @@ namespace Rasterizer
 			//draw a line using linear interpolation from left to right
 			for (int x = Round(xL); x < Round(xR); ++x) {
 				Color c;
+				c.r = -(normalR.x * x + normalR.y * y + dR) / normalR.z;
+				c.g = -(normalG.x * x + normalG.y * y + dG) / normalG.z;
+				c.b = -(normalB.x * x + normalB.y * y + dB) / normalB.z;
+				c.a = -(normalA.x * x + normalA.y * y + dA) / normalA.z;
 				FrameBuffer::SetPixel(x, y, c);
 			}
 			//update left and right of x depending on which side the middle point is
