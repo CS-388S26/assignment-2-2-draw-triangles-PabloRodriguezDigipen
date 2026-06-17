@@ -399,12 +399,12 @@ namespace Rasterizer
 			if (midIsLeft) {
 				xL -= invSlopeTM;
 				xR -= invSlopeTB;
-				c -= cStepY + cStepX * invSlopeTM;
+				cL -= cStepY + cStepX * invSlopeTM;
 			}
 			else {
 				xL -= invSlopeTB;
 				xR -= invSlopeTM;
-				c -= cStepY + cStepX * invSlopeTB;
+				cL -= cStepY + cStepX * invSlopeTB;
 			}
 		}
 
@@ -428,12 +428,12 @@ namespace Rasterizer
 			if (midIsLeft) {
 				xL -= invSlopeMB;
 				xR -= invSlopeTB;
-				c -= cStepY + cStepX * invSlopeMB;
+				cL -= cStepY + cStepX * invSlopeMB;
 			}
 			else {
 				xL -= invSlopeTB;
 				xR -= invSlopeMB;
-				c -= cStepY + cStepX * invSlopeTB;
+				cL -= cStepY + cStepX * invSlopeTB;
 			}
 		}
 	}
