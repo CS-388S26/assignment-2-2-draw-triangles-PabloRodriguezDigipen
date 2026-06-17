@@ -381,26 +381,30 @@ namespace Rasterizer
 		AEVec3 normalA = (A01.Cross(A02)).Normalize();
 		float dA = (-normalA.x * top.mPosition.x) + (-normalA.y * top.mPosition.y) + (-normalA.z * top.mColor.a);
 
+		Color cStepX = Color(-normalR.x / normalR.z, -normalG.x / normalG.z, -normalB.x / normalB.z, -normalA.x / normalA.z);
+		Color cStepY = Color(-normalR.y / normalR.z, -normalG.y / normalG.z, -normalB.y / normalB.z, -normalA.y / normalA.z);
+
 		int y;
+		Color c, cL;
+		cL = top.mColor;
 		//go from the top to the middle
 		for (y = Round(top.mPosition.y); y > Round(mid.mPosition.y); --y) {
+			c = cL;
 			//draw a line using linear interpolation from left to right
 			for (int x = Round(xL); x < Round(xR); ++x) {
-				Color c;
-				c.r = -(normalR.x * x + normalR.y * y + dR) / normalR.z;
-				c.g = -(normalG.x * x + normalG.y * y + dG) / normalG.z;
-				c.b = -(normalB.x * x + normalB.y * y + dB) / normalB.z;
-				c.a = -(normalA.x * x + normalA.y * y + dA) / normalA.z;
 				FrameBuffer::SetPixel(x, y, c);
+				c += cStepX;
 			}
 			//update left and right of x depending on which side the middle point is
 			if (midIsLeft) {
 				xL -= invSlopeTM;
 				xR -= invSlopeTB;
+				c -= cStepY + cStepX * invSlopeTM;
 			}
 			else {
 				xL -= invSlopeTB;
 				xR -= invSlopeTM;
+				c -= cStepY + cStepX * invSlopeTB;
 			}
 		}
 
@@ -414,23 +418,22 @@ namespace Rasterizer
 
 		//go from the middle to the bottom
 		for (; y >= Round(bot.mPosition.y); --y) {
+			c = cL;
 			//draw a line using linear interpolation from left to right
 			for (int x = Round(xL); x < Round(xR); ++x) {
-				Color c;
-				c.r = -(normalR.x * x + normalR.y * y + dR) / normalR.z;
-				c.g = -(normalG.x * x + normalG.y * y + dG) / normalG.z;
-				c.b = -(normalB.x * x + normalB.y * y + dB) / normalB.z;
-				c.a = -(normalA.x * x + normalA.y * y + dA) / normalA.z;
 				FrameBuffer::SetPixel(x, y, c);
+				c += cStepX;
 			}
 			//update left and right of x depending on which side the middle point is
 			if (midIsLeft) {
 				xL -= invSlopeMB;
 				xR -= invSlopeTB;
+				c -= cStepY + cStepX * invSlopeMB;
 			}
 			else {
 				xL -= invSlopeTB;
 				xR -= invSlopeMB;
+				c -= cStepY + cStepX * invSlopeTB;
 			}
 		}
 	}
