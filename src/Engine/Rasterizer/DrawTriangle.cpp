@@ -1,4 +1,5 @@
 #include <AEEngine.h>
+#include <algorithm>
 #include "Rasterizer.h"
 namespace Rasterizer
 {
@@ -361,26 +362,27 @@ namespace Rasterizer
 		float xL = top.mPosition.x;
 		float xR = top.mPosition.x;
 
+		//get the normal on red
 		AEVec3 R01 = AEVec3(mid.mPosition.x - top.mPosition.x, mid.mPosition.y - top.mPosition.y, mid.mColor.r - top.mColor.r);
 		AEVec3 R02 = AEVec3(bot.mPosition.x - top.mPosition.x, bot.mPosition.y - top.mPosition.y, bot.mColor.r - top.mColor.r);
 		AEVec3 normalR = (R01.Cross(R02)).Normalize();
-		float dR = ( - normalR.x * top.mPosition.x) + ( - normalR.y * top.mPosition.y) + ( - normalR.z * top.mColor.r);
 
+		//get the normal on green
 		AEVec3 G01 = AEVec3(mid.mPosition.x - top.mPosition.x, mid.mPosition.y - top.mPosition.y, mid.mColor.g - top.mColor.g);
 		AEVec3 G02 = AEVec3(bot.mPosition.x - top.mPosition.x, bot.mPosition.y - top.mPosition.y, bot.mColor.g - top.mColor.g);
 		AEVec3 normalG = (G01.Cross(G02)).Normalize();
-		float dG = (-normalG.x * top.mPosition.x) + (-normalG.y * top.mPosition.y) + (-normalG.z * top.mColor.g);
 
+		//get the normal on blue
 		AEVec3 B01 = AEVec3(mid.mPosition.x - top.mPosition.x, mid.mPosition.y - top.mPosition.y, mid.mColor.b - top.mColor.b);
 		AEVec3 B02 = AEVec3(bot.mPosition.x - top.mPosition.x, bot.mPosition.y - top.mPosition.y, bot.mColor.b - top.mColor.b);
 		AEVec3 normalB = (B01.Cross(B02)).Normalize();
-		float dB = (-normalB.x * top.mPosition.x) + (-normalB.y * top.mPosition.y) + (-normalB.z * top.mColor.b);
 
+		//get the normal on alpha
 		AEVec3 A01 = AEVec3(mid.mPosition.x - top.mPosition.x, mid.mPosition.y - top.mPosition.y, mid.mColor.a - top.mColor.a);
 		AEVec3 A02 = AEVec3(bot.mPosition.x - top.mPosition.x, bot.mPosition.y - top.mPosition.y, bot.mColor.a - top.mColor.a);
 		AEVec3 normalA = (A01.Cross(A02)).Normalize();
-		float dA = (-normalA.x * top.mPosition.x) + (-normalA.y * top.mPosition.y) + (-normalA.z * top.mColor.a);
 
+		//get the steps of the colors
 		Color cStepX = Color(-normalR.x / normalR.z, -normalG.x / normalG.z, -normalB.x / normalB.z, -normalA.x / normalA.z);
 		Color cStepY = Color(-normalR.y / normalR.z, -normalG.y / normalG.z, -normalB.y / normalB.z, -normalA.y / normalA.z);
 
@@ -393,9 +395,10 @@ namespace Rasterizer
 			//draw a line using linear interpolation from left to right
 			for (int x = Round(xL); x < Round(xR); ++x) {
 				FrameBuffer::SetPixel(x, y, c);
+				//"move" the color
 				c += cStepX;
 			}
-			//update left and right of x depending on which side the middle point is
+			//update left and right of x and color left depending on which side the middle point is
 			if (midIsLeft) {
 				xL -= invSlopeTM;
 				xR -= invSlopeTB;
@@ -422,9 +425,10 @@ namespace Rasterizer
 			//draw a line using linear interpolation from left to right
 			for (int x = Round(xL); x < Round(xR); ++x) {
 				FrameBuffer::SetPixel(x, y, c);
+				//"move" the color
 				c += cStepX;
 			}
-			//update left and right of x depending on which side the middle point is
+			//update left and right of x and color left depending on which side the middle point is
 			if (midIsLeft) {
 				xL -= invSlopeMB;
 				xR -= invSlopeTB;
@@ -439,7 +443,30 @@ namespace Rasterizer
 	}
 
 	void DrawTriangleBarycentric(const Vertex& v0, const Vertex& v1, const Vertex& v2) {
+		//Calculate the bounding box yMin, yMax, xMin, xMax
+		float xMin = min(v0.mPosition.x, min(v1.mPosition.x, v2.mPosition.x));
+		float xMax = max(v0.mPosition.x, max(v1.mPosition.x, v2.mPosition.x));
 
+		float yMin = min(v0.mPosition.y, min(v1.mPosition.y, v2.mPosition.y));
+		float yMax = max(v0.mPosition.y, max(v1.mPosition.y, v2.mPosition.y));
+
+		Vertex v0v1 = { v1.mPosition - v0.mPosition , v1.mColor - v0.mColor };
+		Vertex v0v2 = { v2.mPosition - v0.mPosition , v2.mColor - v0.mColor };
+
+		float n = (v0v1.mPosition.x) * (v0v2.mPosition.y) - (v0v1.mPosition.y) * (v0v2.mPosition.x); // Ensure counter clockwise order
+
+		for (float y = (yMin); y <= (yMax); ++y) {
+			for (float x = (xMin); x <= (xMax); ++x) {
+				AEVec2 P(x, y);
+				AEVec2 PV0 = P - v0.mPosition, PV1 = P - v1.mPosition, PV2 = P - v2.mPosition;
+				float Lambda_1 = ((PV2.x) * (PV0.y) - (PV2.y) * (PV0.x)) / n;
+				float Lambda_2 = ((PV0.x) * (PV1.y) - (PV0.y) * (PV1.x)) / n;
+				float Lambda_0 = 1 - Lambda_1 - Lambda_2;
+				if (Lambda_0 < 0 || Lambda_1 < 0 || Lambda_2 < 0) continue;
+				Color c = v0.mColor * Lambda_0 + v1.mColor * Lambda_1 + v2.mColor * Lambda_2;
+				FrameBuffer::SetPixel(Round(x), Round(y), c);
+			}
+		}
 	}
 
 	EDrawTriangleMethod GetDrawTriangleMethod() {

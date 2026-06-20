@@ -48,7 +48,7 @@ void AEGameStateMgrCurrentFree();
 void AEGameStateMgrCurrentUnload();
 
 // function to add new game state to the manager
-void AEGameStateMgrAdd(unsigned gameStateIdx, void (*pLoad)(), void (*pInit)(), void (*pUpdate)(), void (*pDraw)(), void (*pFree)(), void (*pUnload)());
+void AEGameStateMgrAdd(unsigned gameStateIdx, AEGameStateFP pLoad, AEGameStateFP pInit, AEGameStateFP pUpdate, AEGameStateFP pDraw, AEGameStateFP pFree, AEGameStateFP pUnload);
 
 // call this at the beginning and AFTER all game states are added to the manager
 void AEGameStateMgrInit(unsigned gameStateInit);
