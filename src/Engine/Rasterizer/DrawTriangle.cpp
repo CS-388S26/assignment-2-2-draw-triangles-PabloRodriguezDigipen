@@ -443,6 +443,7 @@ namespace Rasterizer
 	}
 
 	void DrawTriangleBarycentric(const Vertex& v0, const Vertex& v1, const Vertex& v2) {
+		//copy the vertexes to non constant vertexes
 		Vertex V0 = v0, V1 = v1, V2 = v2;
 
 		//Calculate the bounding box yMin, yMax, xMin, xMax
@@ -452,37 +453,52 @@ namespace Rasterizer
 		float yMin = min(V0.mPosition.y, min(V1.mPosition.y, V2.mPosition.y));
 		float yMax = max(V0.mPosition.y, max(V1.mPosition.y, V2.mPosition.y));
 
+		//get the vectors from v0 to v1 and v0 to v2
 		Vertex v0v1 = { V1.mPosition - V0.mPosition , V1.mColor - V0.mColor };
 		Vertex v0v2 = { V2.mPosition - V0.mPosition , V2.mColor - V0.mColor };
 
-		float n = (V1.mPosition.x - V0.mPosition.x) * (V2.mPosition.y - V0.mPosition.y) - (V1.mPosition.y - V0.mPosition.y) * (V2.mPosition.x - V0.mPosition.x); // Ensure counter clockwise order
+		//get n
+		float n = (V1.mPosition.x - V0.mPosition.x) * (V2.mPosition.y - V0.mPosition.y) - (V1.mPosition.y - V0.mPosition.y) * (V2.mPosition.x - V0.mPosition.x);
+		//Ensure counter clockwise order
 		if (n < 0.f) {
 			n = -n;
 			std::swap(V1, V2);
 		}
 
+		//Calculate Lambda increments using partial derivatives
 		float Lambda_1_XInc = (V2.mPosition.y - V0.mPosition.y) / n;
 		float Lambda_1_YInc = (V0.mPosition.x - V2.mPosition.x) / n;
 
 		float Lambda_2_XInc = (V0.mPosition.y - V1.mPosition.y) / n;
 		float Lambda_2_YInc = (V1.mPosition.x - V0.mPosition.x) / n;
 
-		AEVec2 p(xMin, yMin);
+		//barycentrics coordinates at first pixel
 
+		AEVec2 p((float)Round(xMin), (float)Round(yMin));
+
+		//calculate the initial value of lambda1 and lambda2 for first pixel and row
 		float Lambda1Row = ((V2.mPosition.y - V0.mPosition.y) * p.x + (V0.mPosition.x - V2.mPosition.x) * p.y + (V2.mPosition.x * V0.mPosition.y - V2.mPosition.y * V0.mPosition.x)) / n;
-
 		float Lambda2Row = ((V0.mPosition.y - V1.mPosition.y) * p.x + (V1.mPosition.x - V0.mPosition.x) * p.y + (V0.mPosition.x * V1.mPosition.y - V0.mPosition.y * V1.mPosition.x)) / n;
 
+		//traverse the bounding square on the y axis
 		for (int y = Round(yMin); y <= Round(yMax); ++y) {
+			//get the 1 and 2 lambdas to be moved
 			float Lambda_1 = Lambda1Row, Lambda_2 = Lambda2Row;
+			//traverse the bounding square on the x axis
 			for (int x = Round(xMin); x <= Round(xMax); ++x) {
+				//calculate 0 lambda
 				float Lambda_0 = 1 - Lambda_1 - Lambda_2;
+				//check the lambdas are inside the triangle
 				if (Lambda_0 >= 0 && Lambda_1 >= 0 && Lambda_2 >= 0) {
+					//Interpolate the color using the Lambdas 
 					Color c = V0.mColor * Lambda_0 + V1.mColor * Lambda_1 + V2.mColor * Lambda_2;
-					FrameBuffer::SetPixel((x), (y), c);
+					//draw the pixel
+					FrameBuffer::SetPixel(x, y, c);
 				}
+				//increase the lambdas
 				Lambda_1 += Lambda_1_XInc, Lambda_2 += Lambda_2_XInc;
 			}
+			//increase the lambda rows
 			Lambda1Row += Lambda_1_YInc, Lambda2Row += Lambda_2_YInc;
 		}
 	}
